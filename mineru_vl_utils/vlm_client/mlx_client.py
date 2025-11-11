@@ -9,12 +9,6 @@ from tqdm import tqdm
 from .base_client import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT, SamplingParams, VlmClient
 from .utils import get_rgb_image, load_resource
 
-try:
-    import mlx.core as mx
-    from mlx_vlm import generate, batch_generate
-except ImportError:
-    raise ImportError("Please install mlx-vlm to use the mlx-engine backend.")
-
 
 class MlxVlmClient(VlmClient):
     def __init__(
@@ -41,6 +35,20 @@ class MlxVlmClient(VlmClient):
         self.batch_size = batch_size
         self.use_tqdm = use_tqdm
         self.model_max_length = model.config.text_config.max_position_embeddings
+        try:
+            import mlx.core as mx
+
+            if batch_size == 1:
+                from mlx_vlm import generate
+
+                self.generate = generate
+            else:
+                from mlx_vlm import batch_generate
+
+                self.generate = batch_generate
+
+        except ImportError:
+            raise ImportError("Please install mlx-vlm to use the mlx-engine backend.")
 
     def build_messages(self, prompt: str) -> list[dict]:
         prompt = prompt or self.prompt
@@ -96,7 +104,7 @@ class MlxVlmClient(VlmClient):
 
         generate_kwargs = self.build_generate_kwargs(sampling_params)
 
-        response = generate(
+        response = self.generate(
             model=self.model,
             processor=self.processor,
             prompt=chat_prompt,
@@ -196,28 +204,18 @@ class MlxVlmClient(VlmClient):
         **kwargs,
     ):
         generate_kwargs = self.build_generate_kwargs(sampling_params)
+        output = self.generate(
+            self.model,
+            self.processor,
+            chat_prompts,
+            image_objs,
+            verbose=False,
+            max_tokens=16384,
+            **generate_kwargs,
+        )
         if len(chat_prompts) == 1:
-            output = generate(
-                self.model,
-                self.processor,
-                chat_prompts,
-                image_objs,
-                verbose=False,
-                max_tokens=16384,
-                **generate_kwargs,
-            )
             result = output.text
         else:
-            output = batch_generate(
-                self.model,
-                self.processor,
-                chat_prompts,
-                image_objs,
-                verbose=False,
-                max_tokens=16384,
-                **generate_kwargs,
-            )
-
             result = output.texts
 
         del output
