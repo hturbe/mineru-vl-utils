@@ -210,7 +210,6 @@ class MlxVlmClient(VlmClient):
             chat_prompts,
             image_objs,
             verbose=False,
-            max_tokens=16384,
             **generate_kwargs,
         )
         if len(chat_prompts) == 1:
