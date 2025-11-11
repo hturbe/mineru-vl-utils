@@ -9,6 +9,11 @@ from tqdm import tqdm
 from .base_client import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT, SamplingParams, VlmClient
 from .utils import get_rgb_image, load_resource
 
+try:
+    import mlx.core as mx
+except ImportError:
+    raise ImportError("Please install mlx to use the mlx-engine backend.")
+
 
 class MlxVlmClient(VlmClient):
     def __init__(
