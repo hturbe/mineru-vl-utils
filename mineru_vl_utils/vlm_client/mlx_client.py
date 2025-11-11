@@ -217,10 +217,12 @@ class MlxVlmClient(VlmClient):
             verbose=False,
             **generate_kwargs,
         )
-        if len(chat_prompts) == 1:
+        if hasattr(output, "text"):
             result = output.text
-        else:
+        elif hasattr(output, "texts"):
             result = output.texts
+        else:
+            raise ValueError("Invalid output from generate function.")
 
         del output
         return result
