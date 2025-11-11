@@ -9,6 +9,12 @@ from tqdm import tqdm
 from .base_client import DEFAULT_SYSTEM_PROMPT, DEFAULT_USER_PROMPT, SamplingParams, VlmClient
 from .utils import get_rgb_image, load_resource
 
+try:
+    import mlx.core as mx
+    from mlx_vlm import generate, batch_generate
+except ImportError:
+    raise ImportError("Please install mlx-vlm to use the mlx-engine backend.")
+
 
 class MlxVlmClient(VlmClient):
     def __init__(
@@ -35,12 +41,6 @@ class MlxVlmClient(VlmClient):
         self.batch_size = batch_size
         self.use_tqdm = use_tqdm
         self.model_max_length = model.config.text_config.max_position_embeddings
-        try:
-            import mlx.core as mx
-            from mlx_vlm import generate, batch_generate
-
-        except ImportError:
-            raise ImportError("Please install mlx-vlm to use the mlx-engine backend.")
 
     def build_messages(self, prompt: str) -> list[dict]:
         prompt = prompt or self.prompt
